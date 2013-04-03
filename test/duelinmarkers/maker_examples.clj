@@ -1,7 +1,7 @@
 (ns duelinmarkers.maker-examples
   (:use clojure.test duelinmarkers.maker))
 
-(deftest make-from-prototypes
+(deftest maker-usage
 
   (testing "the simplest prototype"
 
@@ -42,4 +42,14 @@
     (is (= {:name "Name" :grade "from graded" :range "all"}
            (make :multiply-extended-ab)))
     (is (= {:name "Name" :grade 3 :range "all"}
-           (make :multiply-extended-ba)))))
+           (make :multiply-extended-ba))))
+
+  (testing "a record prototype"
+
+    (defrecord FooBear [hair claws])
+    (add-prototype :foo-bear (->FooBear "brown" "big and scary"))
+
+    (is (= (->FooBear "brown" "big and scary") (make :foo-bear)))
+    (is (= (map->FooBear {:hair "thinning" :claws "big and scary" :other "Val"})
+           (make :foo-bear {:hair "thinning" :other "Val"})
+           (make :foo-bear :hair "thinning" :other "Val")))))
