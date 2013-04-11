@@ -1,5 +1,6 @@
 (ns duelinmarkers.maker
-  (:refer-clojure :exclude (extend)))
+  (:refer-clojure :exclude (extend))
+  (:require [clojure.walk :refer (prewalk)]))
 
 (defonce prototypes (atom {}))
 
@@ -16,15 +17,20 @@
      (let [new-prototype (extend bases object)]
        (swap! prototypes assoc k new-prototype))))
 
+(defn- generate [o]
+  (prewalk (fn [val]
+             (if (::gen (meta val)) (apply (first val) (rest val)) val))
+           o))
+
 (defmulti make
   "Provides the named prototype or an object derived from one."
   {:arglists '([k] [k override-object] [k & override-kvs])}
   #(first %&))
 
 (defmethod make :default
-  ([k] (get @prototypes k))
+  ([k] (make k {}))
   ([k overrides]
-     (conj (make k) overrides))
+     (generate (conj (get @prototypes k) overrides)))
   ([k k1 v1 & {:as overrides}]
      (let [overrides (assoc overrides k1 v1)]
        (make k overrides))))

@@ -1,5 +1,7 @@
 (ns duelinmarkers.maker-examples
-  (:use clojure.test duelinmarkers.maker))
+  (:use clojure.test)
+  (:require [duelinmarkers.maker :as m :refer (add-prototype make)]
+            [clojure.data.generators :as gen]))
 
 (deftest maker-usage
 
@@ -44,12 +46,23 @@
     (is (= {:name "Name" :grade 3 :range "all"}
            (make :multiply-extended-ba))))
 
-  (testing "a record prototype"
+  (testing "prototypes with generated values"
 
-    (defrecord FooBear [hair claws])
-    (add-prototype :foo-bear (->FooBear "brown" "big and scary"))
+    (add-prototype :generated {:some-long ^::m/gen [gen/long]})
+    (add-prototype :generated-with-args
+                   {:constrained-long ^::m/gen [gen/long 5 11]})
+    (add-prototype :nested-generated
+                   {:name "Nested"
+                    :gen-simple ^::m/gen [make :simple]
+                    :gen-child ^::m/gen [make :generated]})
 
-    (is (= (->FooBear "brown" "big and scary") (make :foo-bear)))
-    (is (= (map->FooBear {:hair "thinning" :claws "big and scary" :other "Val"})
-           (make :foo-bear {:hair "thinning" :other "Val"})
-           (make :foo-bear :hair "thinning" :other "Val")))))
+    (is (number? (:some-long (make :generated))))
+    (is (not= (:some-long (make :generated))
+              (:some-long (make :generated))))
+    (is (<= 5 (:constrained-long (make :generated-with-args)) 10))
+    (let [nested1 (make :nested-generated)
+          nested2 (make :nested-generated)]
+      (is (number? (-> nested1 :gen-child :some-long)))
+      (is (number? (-> nested2 :gen-child :some-long)))
+      (is (not= (-> nested1 :gen-child :some-long)
+                (-> nested2 :gen-child :some-long))))))
