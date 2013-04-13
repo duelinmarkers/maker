@@ -18,7 +18,7 @@
   (loop [done done todo todo
          [k gen-v :as entry] (first todo) breadcrumbs []]
 
-    #_(clojure.pprint/pprint {:done done :todo todo :entry entry :breadcrums breadcrumbs})
+    #_(clojure.pprint/pprint {:done done :todo todo :entry entry :breadcrumbs breadcrumbs})
     (if (nil? entry)
       done
       (case (::gen (meta gen-v))
