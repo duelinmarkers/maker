@@ -82,4 +82,16 @@
                                           :d ^{::m/gen :from} [[:c] inc]})
 
     (is (= {:a 4 :b 3 :c 1 :d 2} (make :chained-dependencies)))
-    (is (= {:a 2 :b 1 :c 1 :d 0} (make :chained-dependencies :d 0)))))
+    (is (= {:a 2 :b 1 :c 1 :d 0} (make :chained-dependencies :d 0))))
+
+  (testing "prototypes with circular value dependencies"
+
+    (add-prototype :circular {:a ^{::m/gen :from} [[:b] inc]
+                              :b ^{::m/gen :from} [[:c] inc]
+                              :c ^{::m/gen :from} [[:a] inc]})
+
+    ;; (is (make :circular)) TODO detect circular dependency!
+    ;; http://en.wikipedia.org/wiki/Topological_sorting
+    (is (= {:a 2 :b 1 :c 0} (make :circular :c 0)))
+    (is (= {:a 3 :b 5 :c 4} (make :circular :a 3)))
+    (is (= {:a 7 :b 6 :c 8} (make :circular :b 6)))))
