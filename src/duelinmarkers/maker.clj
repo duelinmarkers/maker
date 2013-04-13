@@ -14,33 +14,35 @@
      (let [new-prototype (extend bases object)]
        (swap! prototypes assoc k new-prototype))))
 
-(defn- do-generate
-  ([done todo] (do-generate done todo (first todo) []))
-  ([done todo [k gen-v :as entry] breadcrumbs]
-     #_(clojure.pprint/pprint {:done done :todo todo :entry entry :breadcrums breadcrumbs})
-     (cond
-      (nil? entry) done
-      (= true (::gen (meta gen-v))) (let [todo (dissoc todo k)]
-                                      (recur (assoc done k
-                                                    (apply (first gen-v)
-                                                           (rest gen-v)))
-                                             todo
-                                             (first todo)
-                                             breadcrumbs))
-      (= :from (::gen (meta gen-v))) (let [[arg-keys f] gen-v]
-                                       (if-let [not-done (first (filter #(not (contains? done %)) arg-keys))]
-                                         (recur done
-                                                todo
-                                                [not-done (get todo not-done)]
-                                                (conj breadcrumbs k))
-                                         (let [todo (dissoc todo k)]
-                                           (recur (assoc done k
-                                                         (apply f (map (partial get done) arg-keys)))
-                                                  todo
-                                                  (first todo)
-                                                  breadcrumbs))))
-      :else (throw (ex-info {:done done :todo todo :entry entry
-                             :breadcrumbs breadcrumbs})))))
+(defn- do-generate [done todo]
+  (loop [done done todo todo
+         [k gen-v :as entry] (first todo) breadcrumbs []]
+
+    #_(clojure.pprint/pprint {:done done :todo todo :entry entry :breadcrums breadcrumbs})
+    (if (nil? entry)
+      done
+      (case (::gen (meta gen-v))
+        true
+        (let [todo (dissoc todo k)]
+          (recur (assoc done k (apply (first gen-v) (rest gen-v)))
+                 todo
+                 (first todo)
+                 breadcrumbs))
+        :from
+        (let [[arg-keys f] gen-v]
+          (if-let [not-done (first (filter #(not (contains? done %)) arg-keys))]
+            (recur done
+                   todo
+                   [not-done (get todo not-done)]
+                   (conj breadcrumbs k))
+            (let [todo (dissoc todo k)]
+              (recur (assoc done k
+                            (apply f (map (partial get done) arg-keys)))
+                     todo
+                     (first todo)
+                     breadcrumbs))))
+        (throw (ex-info {:done done :todo todo :entry entry
+                         :breadcrumbs breadcrumbs}))))))
 
 (defn- generate [o]
   (let [{done false todo true}
