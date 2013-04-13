@@ -1,6 +1,6 @@
 (ns duelinmarkers.maker
   (:refer-clojure :exclude (extend))
-  (:require [clojure.walk :refer (prewalk)]))
+  (:require clojure.pprint))
 
 (defonce prototypes (atom {}))
 
@@ -9,18 +9,39 @@
     (reduce conj objects)))
 
 (defn add-prototype
-  "Typically called in preloaded test startup code, adds a maker prototype.
-  If it's to participate in extension, it should support conj (i.e., any
-  IPersistentCollection could work, including maps and records). "
   ([k object] (add-prototype k [] object))
   ([k bases object]
      (let [new-prototype (extend bases object)]
        (swap! prototypes assoc k new-prototype))))
 
+(defn- do-generate
+  ([done todo] (do-generate done todo (first todo) []))
+  ([done todo [k gen-v :as entry] breadcrumbs]
+     #_(clojure.pprint/pprint {:done done :todo todo :entry entry :breadcrums breadcrumbs})
+     (cond
+      (nil? entry) done
+      (= true (::gen (meta gen-v))) (let [todo (dissoc todo k)]
+                                      (recur (assoc done k
+                                                    (apply (first gen-v)
+                                                           (rest gen-v)))
+                                             todo
+                                             (first todo)
+                                             breadcrumbs))
+      (= :from (::gen (meta gen-v))) (let [[arg-keys f] gen-v]
+                                       (if (every? #(contains? done %) arg-keys)
+                                         (let [todo (dissoc todo k)]
+                                           (recur (assoc done k
+                                                         (apply f (map (partial get done) arg-keys)))
+                                                  todo
+                                                  (first todo)
+                                                  breadcrumbs)))))))
+
 (defn- generate [o]
-  (prewalk (fn [val]
-             (if (::gen (meta val)) (apply (first val) (rest val)) val))
-           o))
+  (let [{done false todo true}
+        (group-by #(contains? (meta (val %)) ::gen) o)
+        done (into (empty o) done)
+        todo (into {} todo)]
+    (do-generate done todo)))
 
 (defmulti make
   "Provides the named prototype or an object derived from one."

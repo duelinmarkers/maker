@@ -33,7 +33,8 @@
 
     (add-prototype :very-extended [:extended] {:dob "1978-02-11"})
 
-    (is (= {:name "Name" :grade 3 :dob "1978-02-11"} (make :very-extended))))
+    (is (= {:name "Name" :grade 3 :dob "1978-02-11"}
+           (make :very-extended))))
 
   (testing "a multiply-extended prototype"
 
@@ -46,7 +47,7 @@
     (is (= {:name "Name" :grade 3 :range "all"}
            (make :multiply-extended-ba))))
 
-  (testing "prototypes with generated values"
+  (testing "prototypes with independent generated values"
 
     (add-prototype :generated {:some-long ^::m/gen [gen/long]})
     (add-prototype :generated-with-args
@@ -65,4 +66,12 @@
       (is (number? (-> nested1 :gen-child :some-long)))
       (is (number? (-> nested2 :gen-child :some-long)))
       (is (not= (-> nested1 :gen-child :some-long)
-                (-> nested2 :gen-child :some-long))))))
+                (-> nested2 :gen-child :some-long)))))
+
+  (testing "prototypes with dependent generated values"
+
+    (add-prototype :a-depends-b {:a ^{::m/gen :from} [[:b] inc]
+                                 :b 1})
+
+    (is (= {:a 2 :b 1} (make :a-depends-b)))
+    (is (= {:a 3 :b 2} (make :a-depends-b {:b 2})))))
