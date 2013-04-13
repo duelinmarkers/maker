@@ -74,4 +74,12 @@
                                  :b 1})
 
     (is (= {:a 2 :b 1} (make :a-depends-b)))
-    (is (= {:a 3 :b 2} (make :a-depends-b {:b 2})))))
+    (is (= {:a 3 :b 2} (make :a-depends-b {:b 2})))
+
+    (add-prototype :chained-dependencies {:a ^{::m/gen :from} [[:b] inc]
+                                          :b ^{::m/gen :from} [[:c :d] +]
+                                          :c 1
+                                          :d ^{::m/gen :from} [[:c] inc]})
+
+    (is (= {:a 4 :b 3 :c 1 :d 2} (make :chained-dependencies)))
+    (is (= {:a 2 :b 1 :c 1 :d 0} (make :chained-dependencies :d 0)))))

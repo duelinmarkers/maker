@@ -28,13 +28,19 @@
                                              (first todo)
                                              breadcrumbs))
       (= :from (::gen (meta gen-v))) (let [[arg-keys f] gen-v]
-                                       (if (every? #(contains? done %) arg-keys)
+                                       (if-let [not-done (first (filter #(not (contains? done %)) arg-keys))]
+                                         (recur done
+                                                todo
+                                                [not-done (get todo not-done)]
+                                                (conj breadcrumbs k))
                                          (let [todo (dissoc todo k)]
                                            (recur (assoc done k
                                                          (apply f (map (partial get done) arg-keys)))
                                                   todo
                                                   (first todo)
-                                                  breadcrumbs)))))))
+                                                  breadcrumbs))))
+      :else (throw (ex-info {:done done :todo todo :entry entry
+                             :breadcrumbs breadcrumbs})))))
 
 (defn- generate [o]
   (let [{done false todo true}
