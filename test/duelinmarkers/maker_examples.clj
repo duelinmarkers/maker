@@ -2,7 +2,9 @@
   (:use clojure.test)
   (:require [duelinmarkers.maker :as m :refer (add-prototype
                                                make
-                                               gen)]
+                                               gen
+                                               gen-from
+                                               gen-from-fn)]
             [clojure.data.generators :as gen]))
 
 (deftest maker-usage
@@ -72,25 +74,25 @@
 
   (testing "prototypes with dependent generated values"
 
-    (add-prototype :a-depends-b {:a ^{::m/gen :from} [[:b] inc]
+    (add-prototype :a-depends-b {:a (gen-from [b] (inc b))
                                  :b 1})
 
     (is (= {:a 2 :b 1} (make :a-depends-b)))
     (is (= {:a 3 :b 2} (make :a-depends-b {:b 2})))
 
-    (add-prototype :chained-dependencies {:a ^{::m/gen :from} [[:b] inc]
-                                          :b ^{::m/gen :from} [[:c :d] +]
+    (add-prototype :chained-dependencies {:a (gen-from [b] (inc b))
+                                          :b (gen-from-fn [:c :d] +)
                                           :c 1
-                                          :d ^{::m/gen :from} [[:c] inc]})
+                                          :d (gen-from-fn [:c] inc)})
 
     (is (= {:a 4 :b 3 :c 1 :d 2} (make :chained-dependencies)))
     (is (= {:a 2 :b 1 :c 1 :d 0} (make :chained-dependencies :d 0))))
 
   (testing "prototypes with circular value dependencies"
 
-    (add-prototype :circular {:a ^{::m/gen :from} [[:b] inc]
-                              :b ^{::m/gen :from} [[:c] inc]
-                              :c ^{::m/gen :from} [[:a] inc]})
+    (add-prototype :circular {:a (gen-from-fn [:b] inc)
+                              :b (gen-from-fn [:c] inc)
+                              :c (gen-from-fn [:a] inc)})
 
     (is (thrown? IllegalArgumentException (make :circular)))
     (is (= {:a 2 :b 1 :c 0} (make :circular :c 0)))

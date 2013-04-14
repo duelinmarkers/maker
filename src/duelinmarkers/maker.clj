@@ -68,3 +68,9 @@
 
 (defn gen {:arglists '([f & args])}
   [& args] (with-meta args {::gen true}))
+
+(defn gen-from-fn [& args]
+  (with-meta args {::gen :from}))
+
+(defmacro gen-from [deps & body]
+  `(gen-from-fn ~(mapv keyword deps) (fn ~deps ~@body)))
