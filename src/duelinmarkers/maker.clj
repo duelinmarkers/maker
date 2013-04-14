@@ -17,8 +17,10 @@
 (defn- do-generate [done todo]
   (loop [done done todo todo
          [k gen-v :as entry] (first todo) breadcrumbs []]
-
-    #_(clojure.pprint/pprint {:done done :todo todo :entry entry :breadcrumbs breadcrumbs})
+    #_(clojure.pprint/pprint {:done done :todo todo
+                              :entry entry :breadcrumbs breadcrumbs})
+    (when (> (count breadcrumbs) 50)
+      (throw (IllegalArgumentException. (str "Looks like a circular dependency. Break the circle by specifying one of " breadcrumbs))))
     (if (nil? entry)
       done
       (case (::gen (meta gen-v))
