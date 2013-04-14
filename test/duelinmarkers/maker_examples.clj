@@ -1,6 +1,8 @@
 (ns duelinmarkers.maker-examples
   (:use clojure.test)
-  (:require [duelinmarkers.maker :as m :refer (add-prototype make)]
+  (:require [duelinmarkers.maker :as m :refer (add-prototype
+                                               make
+                                               gen)]
             [clojure.data.generators :as gen]))
 
 (deftest maker-usage
@@ -49,13 +51,13 @@
 
   (testing "prototypes with independent generated values"
 
-    (add-prototype :generated {:some-long ^::m/gen [gen/long]})
+    (add-prototype :generated {:some-long (gen gen/long)})
     (add-prototype :generated-with-args
-                   {:constrained-long ^::m/gen [gen/long 5 11]})
+                   {:constrained-long (gen gen/long 5 11)})
     (add-prototype :nested-generated
                    {:name "Nested"
-                    :gen-simple ^::m/gen [make :simple]
-                    :gen-child ^::m/gen [make :generated]})
+                    :gen-simple (gen make :simple)
+                    :gen-child (gen make :generated)})
 
     (is (number? (:some-long (make :generated))))
     (is (not= (:some-long (make :generated))

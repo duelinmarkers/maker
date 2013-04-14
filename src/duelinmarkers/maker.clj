@@ -65,3 +65,6 @@
   ([k k1 v1 & {:as overrides}]
      (let [overrides (assoc overrides k1 v1)]
        (make k overrides))))
+
+(defn gen {:arglists '([f & args])}
+  [& args] (with-meta args {::gen true}))
