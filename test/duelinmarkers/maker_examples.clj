@@ -74,11 +74,23 @@
 
   (testing "prototypes with dependent generated values"
 
-    (add-prototype :a-depends-b {:a (gen-from [b] (inc b))
+    (add-prototype :a-depends-b {:a (gen-from-fn [:b] inc)
                                  :b 1})
 
     (is (= {:a 2 :b 1} (make :a-depends-b)))
     (is (= {:a 3 :b 2} (make :a-depends-b {:b 2})))
+
+    (add-prototype :phone
+                   {:npa "212" :nxx "555" :xxxx "1212"
+                    :formatted
+                    (gen-from [npa nxx xxxx]
+                              (str "(" npa ") " nxx "-" xxxx))})
+
+    (is (= "(212) 555-1212" (:formatted (make :phone))))
+    (is (= "555-1212"
+           (:formatted
+            (make :phone
+                  :formatted (gen-from [nxx xxxx] (str nxx "-" xxxx))))))
 
     (add-prototype :chained-dependencies {:a (gen-from [b] (inc b))
                                           :b (gen-from-fn [:c :d] +)
