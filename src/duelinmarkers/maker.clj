@@ -54,12 +54,9 @@
         todo (into {} todo)]
     (do-generate done todo)))
 
-(defmulti make
+(defn make
   "Provides the named prototype or an object derived from one."
   {:arglists '([k] [k override-object] [k & override-kvs])}
-  #(first %&))
-
-(defmethod make :default
   ([k] (make k {}))
   ([k overrides]
      (generate (conj (get @prototypes k) overrides)))
