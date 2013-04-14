@@ -32,7 +32,8 @@
                  breadcrumbs))
         :from
         (let [[arg-keys f] gen-v]
-          (if-let [not-done (first (filter #(not (contains? done %)) arg-keys))]
+          (if-let [not-done
+                   (first (filter #(not (contains? done %)) arg-keys))]
             (recur done
                    todo
                    [not-done (get todo not-done)]
