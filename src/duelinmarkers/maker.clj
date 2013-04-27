@@ -5,8 +5,11 @@
 (defonce prototypes (atom {}))
 
 (defn- extend [bases object]
-  (let [objects (-> (mapv @prototypes bases) (conj object))]
-    (reduce conj objects)))
+  (if-let [missing (seq (remove @prototypes bases))]
+    (throw (IllegalArgumentException.
+            (str "Unknown base prototype(s): " missing)))
+    (let [objects (-> (mapv @prototypes bases) (conj object))]
+      (reduce conj objects))))
 
 (defn add-prototype
   ([k object] (add-prototype k [] object))
