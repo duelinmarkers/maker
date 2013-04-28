@@ -1,9 +1,11 @@
 (ns duelinmarkers.maker-examples
+
   "This namespace aims to demonstrate all the features of maker. The
   `testing` forms below have explanatory commentary littered throughout.
 
   Some examples use fns from `clojure.data.generators`, which are handy
   for generating test data, but maker has no dependency on that lib."
+
   (:use clojure.test)
   (:require [duelinmarkers.maker
              :refer (add-prototype
@@ -23,13 +25,13 @@
 
     (add-prototype :simple {:name "Name"})
 
-    ;; In your tests, call make. When you pass just the key, it returns
+    ;; In your tests, call `make`. When you pass just the key, it returns
     ;; the corresponding map.
 
     (is (= {:name "Name"} (make :simple)))
 
     ;; You can override values or add additional kv pairs by additionally
-    ;; passing make either a map or interleaved kvs.
+    ;; passing `make` either a map or interleaved kvs.
 
     (is (= {:name "Override"}
            (make :simple {:name "Override"})
@@ -60,7 +62,7 @@
 
   (testing "a multiply-extended prototype"
 
-    ;; You can provide multiple base prototypes, and they'll be applied
+    ;; You can provide multiple base prototypes, and they'll be conj'd
     ;; from left to right, so the values in the right-most will "win."
 
     (add-prototype :graded-and-ranged {:grade "from graded" :range "all"})
@@ -111,18 +113,17 @@
     ;; Generated values can also depend on other values, generated or not,
     ;; using `gen-from` and `gen-from-fn`.
 
-    ;; `gen-from-fn` will apply the fn passed as the last arg to the
+    ;; `gen-from-fn` will apply the fn passed as the second arg to the
     ;; values whose keys you pass as the first arg.
 
-    ;; XXX Maybe it would make more sense if it went (gen-from-fn inc :b)?
     (add-prototype :a-depends-b {:a (gen-from-fn [:b] inc)
                                  :b 1})
 
     (is (= {:a 2 :b 1} (make :a-depends-b)))
-    (is (= {:a 3 :b 2} (make :a-depends-b {:b 2})))
+    (is (= {:a 3 :b 2} (make :a-depends-b :b 2)))
 
-    ;; gen-from is syntactic sugar for gen-from-fn when you want to create
-    ;; the fn inline with references to the values you depend on.
+    ;; `gen-from` is syntactic sugar for `gen-from-fn` when you want to
+    ;; create the fn inline with references to the values you depend on.
 
     (add-prototype :phone
                    {:npa "212"
@@ -138,11 +139,14 @@
             (make :phone
                   :formatted (gen-from [nxx xxxx] (str nxx "-" xxxx))))))
 
-    ;; So that gen-from is the same as:
+    ;; So the `gen-from` above is the same as the following `gen-from-fn`.
 
     #_(gen-from-fn [:npa :nxx :xxxx]
                    (fn [npa nxx xxxx]
                      (str "(" npa ") " nxx "-" xxxx)))
+
+    ;; You can depend on dependent values, and maker will generate them as
+    ;; needed.
 
     (add-prototype :chained-dependencies {:a (gen-from [b] (inc b))
                                           :b (gen-from-fn [:c :d] +)
@@ -153,6 +157,9 @@
     (is (= {:a 2 :b 1 :c 1 :d 0} (make :chained-dependencies :d 0))))
 
   (testing "prototypes with circular value dependencies"
+
+    ;; You can even create a prototype with circular dependencies, but you
+    ;; can only make a map if you override something in the circle.
 
     (add-prototype :circular {:a (gen-from-fn [:b] inc)
                               :b (gen-from-fn [:c] inc)
