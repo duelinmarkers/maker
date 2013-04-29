@@ -1,4 +1,4 @@
-# maker
+# duelinmarkers.maker
 
 A Clojure library for defining prototype objects and creating new objects
 based on those prototypes.
